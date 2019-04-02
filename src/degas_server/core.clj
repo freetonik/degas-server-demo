@@ -1,5 +1,5 @@
 (ns degas-server.core
-    (:require [degas-server.handler :refer [app]]
+    (:require [degas-server.handler :refer [app ws]]
               [org.httpkit.server   :refer [run-server]])
   (:gen-class))
 
@@ -13,4 +13,10 @@
     (reset! server nil)))
 
 (defn -main [& args]
-  (reset! server (run-server app {:port 3449})))
+  (reset! server (run-server ws {:port 3449})))
+
+(defn restart-server []
+  (stop-server)
+  (-main))
+
+;; (restart-server)

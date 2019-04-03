@@ -14,5 +14,5 @@
   :min-lein-version "2.0.0"
   :uberjar-name "degas-server-standalone.jar"
   :profiles {
-             :uberjar {:aot :all}
+             :uberjar {:main degas-server.web, :aot :all}
              :production {:env {:production true}}})

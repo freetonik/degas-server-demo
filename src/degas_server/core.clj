@@ -1,6 +1,7 @@
 (ns degas-server.core
     (:require [degas-server.handler :refer [ws broadcast-and-run! stop! clear-users!]]
-              [org.httpkit.server   :refer [run-server]])
+              [org.httpkit.server   :refer [run-server]]
+              [environ.core :refer [env]])
   (:gen-class))
 
 (defonce server (atom nil))
@@ -12,8 +13,11 @@
     (@server :timeout 100)
     (reset! server nil)))
 
-(defn -main [& args]
-  (reset! server (run-server ws {:port 3449})))
+(defn -main [& port]
+  (let [port (Integer. (or port (env :port) 5000))]
+    (reset! server (run-server ws {:port port}))
+    (println "Server started on port" port)))
+
 
 (defn restart-server []
   (stop-server)

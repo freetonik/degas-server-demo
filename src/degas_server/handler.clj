@@ -26,6 +26,30 @@
   (apply merge (map (fn [[k v]] {(:name v) (:fitness v)}) usersdata)))
 
 ;; Communcation
+(defn run-update-async []
+  (go (while @running?
+        (>! update-queue 1)
+        (<! (timeout 500))))
+
+  (go (while true
+        (let [item (<! update-queue)]
+          (broadcast-message {:update (get-ratings @users)})))))
+
+
+(defn broadcast-and-run! []
+  (reset! running? true)
+  (broadcast-message {:start true})
+  (run-update-async))
+
+(defn stop! []
+  (reset! running? false)
+  (broadcast-message {:stop true}))
+
+(defn clear-users! []
+  (reset! users {})
+  (broadcast-message {:update (get-ratings @users)}))
+
+
 (defn ws
   "Clients communication handler."
   [req]
@@ -65,29 +89,7 @@
                     (swap! users dissoc con)
                     (println "[-]" con " => " status)))))
 
-(defn run-update-async []
-  (go (while @running?
-        (>! update-queue 1)
-        (<! (timeout 500))))
-
-  (go (while true
-        (let [item (<! update-queue)]
-          (broadcast-message {:update (get-ratings @users)})))))
-
 (defroutes routes
   (GET "/" [] ws)
   (resources "/")
   (not-found "Not Found"))
-
-(defn broadcast-and-run! []
-  (reset! running? true)
-  (broadcast-message {:start true})
-  (run-update-async))
-
-(defn stop! []
-  (reset! running? false)
-  (broadcast-message {:stop true}))
-
-(defn clear-users! []
-  (reset! users {})
-  (broadcast-message {:update (get-ratings @users)}))

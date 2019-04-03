@@ -1,5 +1,5 @@
 (ns degas-server.core
-    (:require [degas-server.handler :refer [app ws]]
+    (:require [degas-server.handler :refer [ws broadcast-and-run! stop! clear-users!]]
               [org.httpkit.server   :refer [run-server]])
   (:gen-class))
 
@@ -20,3 +20,6 @@
   (-main))
 
 ;; (restart-server)
+;; (broadcast-and-run!)
+;; (stop!)
+;; (clear-users!)

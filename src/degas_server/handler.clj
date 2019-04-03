@@ -6,33 +6,36 @@
             [degas-server.tsm :refer :all]
             [org.httpkit.server :refer [with-channel on-receive on-close send!]]))
 
-;; -------
 ;; Helpers
 (defn sort-by-value-desc [x]
   (into (sorted-map-by (fn [key1 key2]
                      (compare [(get x key2) key2]
-                              [(get x key1) key1])))
-        x))
+                              [(get x key1) key1]))) x))
 
-;; -----
-;; STATE
+;; State
 (def running? (atom false))
 (def update-queue (chan 10))
 (def clients (atom {}))
 (def users (atom {})) ;; {:name "STR", :best-ind [...], :fitness INT}
 
+(defn broadcast-message [message]
+  (doseq [client @clients]
+    (send! (key client) (pr-str message) false)))
 
-;; ------------
-;; COMMUNCATION
+(defn get-ratings [usersdata]
+  (apply merge (map (fn [[k v]] {(:name v) (:fitness v)}) usersdata)))
+
+;; Communcation
 (defn ws
   "Clients communication handler."
   [req]
   (with-channel req con
     (swap! clients assoc con true)
-    (println "[CONNECTED]" con)
+    (println "[+]" con)
 
     (on-receive con (fn [message]
                       (let [m (clojure.edn/read-string message)]
+
                         (if (:name m)
                           (do
                             (swap! users
@@ -47,16 +50,20 @@
                                  assoc
                                  con {:name (:name (@users con))
                                       :best (:best m)
-                                      :fitness (fitness-tsm (:best m))})))))
+                                      :fitness (fitness-tsm (:best m))}))
+
+                        (if (:admin-start m)
+                          (do
+                            (println "ADMIN START")
+                            (broadcast-and-run!)))
+
+                        (if (:admin-stop m)
+                          (stop!)))))
 
     (on-close con (fn [status]
                     (swap! clients dissoc con)
                     (swap! users dissoc con)
-                    (println "[DISCON]" con " || " status)))))
-
-(defn broadcast-message [message]
-  (doseq [client @clients]
-    (send! (key client) (pr-str message) false)))
+                    (println "[-]" con " => " status)))))
 
 (defn run-update-async []
   (go (while @running?
@@ -72,23 +79,15 @@
   (resources "/")
   (not-found "Not Found"))
 
-(defn get-ratings [usersdata]
-  ;; (apply merge (map (fn [[k v]] {(:name v) (:fitness v)}) usersdata)))
-  (apply merge (map (fn [[k v]] {(:name v) (rand-int 1000)}) usersdata)))
-
-(sort-by-value-desc (get-ratings @users))
-
 (defn broadcast-and-run! []
   (reset! running? true)
   (broadcast-message {:start true})
-  (run-update-async)
-  )
+  (run-update-async))
 
 (defn stop! []
   (reset! running? false)
-  (broadcast-message {:stop true})
-  )
+  (broadcast-message {:stop true}))
 
-;; (broadcast-and-run!)
-;; (stop!)
-;; (reset! users {})
+(defn clear-users! []
+  (reset! users {})
+  (broadcast-message {:update (get-ratings @users)}))

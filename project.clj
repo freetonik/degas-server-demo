@@ -1,4 +1,4 @@
-(defproject degas-server "0.1.9"
+(defproject degas-server "0.1.10"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -14,5 +14,5 @@
   :min-lein-version "2.0.0"
   :uberjar-name "degas-server-standalone.jar"
   :profiles {
-             :uberjar {:main degas-server.web, :aot :all}
+             :uberjar {:main degas-server.core, :aot :all}
              :production {:env {:production true}}})

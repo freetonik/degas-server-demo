@@ -27,19 +27,17 @@
 
 ;; Communcation
 (defn run-update-async []
-  (go (while @running?
+  (go (while true
         (>! update-queue 1)
-        (<! (timeout 500))))
+        (<! (timeout 10000))))
 
   (go (while true
         (let [item (<! update-queue)]
           (broadcast-message {:update (get-ratings @users)})))))
 
-
 (defn broadcast-and-run! []
   (reset! running? true)
-  (broadcast-message {:start true})
-  (run-update-async))
+  (broadcast-message {:start true}))
 
 (defn stop! []
   (reset! running? false)

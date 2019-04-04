@@ -29,7 +29,7 @@
 (defn run-update-async []
   (go (while true
         (>! update-queue 1)
-        (<! (timeout 10000))))
+        (<! (timeout 1000))))
 
   (go (while true
         (let [item (<! update-queue)]
@@ -80,7 +80,11 @@
                             (broadcast-and-run!)))
 
                         (if (:admin-stop m)
-                          (stop!)))))
+                          (stop!))
+
+
+                        (if (:admin-reset m)
+                          (clear-users!)))))
 
     (on-close con (fn [status]
                     (swap! clients dissoc con)
